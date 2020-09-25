@@ -1,0 +1,40 @@
+#!/bin/bash
+#===============================================================================
+#          FILE: gitgencommits
+#         USAGE: gitgencommits [ NR [ BRANCH ] ]
+#   DESCRIPTION: Create the given NR of random git commits in the given BRANCH.
+#                Each commit will contain a single file
+#       OPTIONS:
+#  REQUIREMENTS:
+#        AUTHOR: Gábor Nyers
+#       CREATED: 2019-12-02
+#       LICENSE: GPLv3
+#===============================================================================
+
+
+FNAMETMPL=${FNAMETMPL:-'file-%s-%03d.txt'}
+CONTTMPL=${CONTTMPL:-'BRANCH: %s, NR: %03d\n'}
+GITOPTS='--no-pager'
+GIT="git $GITOPTS"
+
+gitbranch () {
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>&1) \
+        && echo "$BRANCH"  || true
+}
+
+[ -n "$2" ] && BRANCH=$2 || BRANCH=$( gitbranch )
+[ -z "$BRANCH" ] && BRANCH=master
+
+
+R=$($GIT checkout "$BRANCH" 2>&1) && echo $R \
+    || $GIT checkout -b "$BRANCH" || exit 99
+
+for i in $( seq $1 )
+do
+    RND=$(( RANDOM % 999 ))
+    F=$( printf $FNAMETMPL $( echo $BRANCH | tr '/' '-')  $RND )
+    echo "File $RND in commit $i" > "$F"
+    printf "$CONTTMPL" "$BRANCH" $RND >> "$F"
+    $GIT add "$F"
+    $GIT commit -m "Commit nr.$i: $RND to branch $BRANCH"
+done

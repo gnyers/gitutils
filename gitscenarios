@@ -1,0 +1,160 @@
+#!/bin/bash
+#===============================================================================
+#          FILE: gitscenarios
+#         USAGE: gitscenarios 1
+#   DESCRIPTION: Create different Git scenario's for Git
+#       OPTIONS:
+#  REQUIREMENTS:
+#        AUTHOR: Gábor Nyers
+#       CREATED: 2019-12-02
+#      LICENCSE: GPLv3
+#===============================================================================
+
+
+
+ACTION=$1; shift
+
+bailout () {
+    echo $@; exit 1
+}
+
+gitbranch () {
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>&1) \
+        && echo "$BRANCH"  || true
+}
+
+[ -n "$( gitbranch )" ] && bailout 'Current dir is already a Git. Exiting.'
+
+DEV1=${DEV1:-Anna}; EMAIL1='anna@acme.com'
+DEV2=${DEV2:-Jack}; EMAIL2='jack@example.com'
+CENTRAL='central'
+
+# GIT COMMANDS
+GITLOG='git --no-pager log --graph --decorate --oneline --all'
+
+D=$( pwd )
+
+SCEN1DESC="
+  Scen 1: 2x Individual repo's
+    Step 1. repo $DEV1 is created, with a single commit (README.DEV1)
+    Step 2. local configuraion: username: $DEV1, email: $EMAIL1
+    Step 3. repo $DEV2 is created, $DEV1's repo added as remote,
+    Step 4. local configuraion: username: $DEV2, email: $EMAIL2
+    Step 5. $DEV1's repo added as remote, and its content is fetched and
+            merged.
+    Step 4. $DEV2's repo is added as remote to $DEV2's repo
+"
+
+SCEN2DESC="
+  Scen 2: Central rep with 2 DEVs
+    Step 1. bare repo $CENTRAL is created
+    Step 2. repo $DEV1 is created, with a local config:
+            username: $DEV1, email: $EMAIL1
+    Step 3. Create single commit
+    Step 4. Add $CENTRAL as remote and push 'master' to $CENTRAL
+    Step 5. repo $DEV2 is created, with a local config:
+            username: $DEV2, email: $EMAIL2
+    Step 4. Add $CENTRAL as remote and pull content
+    Step 5. Checkout 'master' and create new file README.$DEV2 and commit
+    Step 6. Push changes to master
+
+"
+
+case $ACTION in
+1)
+    echo; echo "### --- Creating $DEV1's personal repo (dir: $(pwd)"
+    cd "$D"
+    git init $DEV1
+    cd $DEV1
+    git config --local user.name $DEV1
+    git config --local user.email $EMAIL1
+    git checkout -b master
+    echo "This file is created by '$DEV1'" > "README.$DEV1"
+    git add "README.$DEV1"
+    git commit -m "Initial commit by $DEV1"
+
+    echo; echo "### --- Creating $DEV2's personal repo, adding remote for $DEV1"
+    cd "$D"
+    # git clone $DEV1 $DEV2
+    git init $DEV2
+    cd $DEV2
+    git config --local user.name $DEV2          #--- Config
+    git config --local user.email $EMAIL2
+    git remote add $DEV1 "$D/$DEV1"             #--- Remote
+    git fetch $DEV1
+    git merge $DEV1/master
+    # git push --set-upstream $DEV1 master
+
+    echo; echo "### --- Switching back to $DEV1, adding remote for $DEV2"
+    cd $D/$DEV1
+    git remote add $DEV2 "$D/$DEV2"
+    git fetch $DEV2
+
+
+    printf '\n\n===   SUMMARY     ===   ===   ===   ===   ===  \n'
+    echo "DEV1: $DEV1, in $(realpath $DEV1) "
+        cd $D/$DEV1
+        (
+        echo '--- Log:'; $GITLOG
+        echo '--- Branches:'; git branch -a
+        echo '--- Remotes:'; git remote -v
+        ) | sed -e 's/^/    /g'
+
+    printf '\n---   ---   ---   ---   ---   ---   ---   ---  \n'
+
+    echo "DEV2: $DEV2, in $(realpath $DEV2) "
+        cd $D/$DEV2
+        (
+        echo '--- Log:'; $GITLOG
+        echo '--- Branches:'; git branch -a
+        echo '--- Remotes:'; git remote -v
+        ) | sed -e 's/^/    /g'
+    printf '\n---   ---   ---   ---   ---   ---   ---   ---  \n'
+    ;;
+2)
+    echo; echo "### --- Creating central repository (dir: $(pwd)"
+    git init --bare "$CENTRAL"
+
+    echo; echo "### --- Creating $DEV1's personal repo (dir: $(pwd)"
+    git init $DEV1
+    cd $DEV1
+    git config --local user.name $DEV1
+    git config --local user.email $EMAIL1
+    git checkout -b master
+    echo "This file is created by '$DEV1'" > "README.$DEV1"
+    git add "README.$DEV1"
+    git commit -m "Initial commit by $DEV1"
+    git remote add $CENTRAL "$D/$CENTRAL"
+    git push --set-upstream central master
+    cd "$D"
+
+    echo; echo "### --- Creating $DEV2's personal repo (dir: $(pwd)"
+    git init $DEV2
+    cd $DEV2
+    git config --local user.name $DEV2
+    git config --local user.email $EMAIL2
+    git remote add $CENTRAL "$D/$CENTRAL"
+    git fetch $CENTRAL
+    git merge $CENTRAL/master
+    git checkout master
+    echo "This file is created by '$DEV2'" > "README.$DEV2"
+    git add "README.$DEV2"
+    git commit -m "Initial commit by $DEV2"
+    git push --set-upstream central master
+    cd "$D"
+
+    cd $DEV1
+    git pull $CENTRAL
+    echo '### --- SUMMARY:'
+    echo "DEV1: $DEV1, in $(realpath $DEV1) "
+    echo "DEV2: $DEV2, in $(realpath $DEV2) "
+    echo "Central repo: $CENTRAL in $(realpath $CENTRAL)"
+    ;;
+*)
+    echo "Usage:"
+    echo "     $( basename $0 ) 1 | 2"
+    echo "  Where:"
+    printf '%s' "$SCEN1DESC"
+    printf '%s' "$SCEN2DESC"
+    ;;
+esac

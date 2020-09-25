@@ -1,0 +1,17 @@
+
+### Git aliases
+alias    git='git --no-pager'
+alias    .gs='git status'
+
+alias    .gl='git log --oneline --graph --decorate'   # current branch only
+alias   .gla='git log --oneline --graph --decorate --all'  # all branches
+alias  .gla5='git log --oneline --graph --decorate --all -5'
+alias .gla10='git log --oneline --graph --decorate --all -10'
+alias .gla20='git log --oneline --graph --decorate --all -20'
+
+alias    .gb='git branch'
+alias   .gci='git commit'
+alias   .gco='git checkout'
+alias .gpush='git push'
+alias .gpull='git pull'
+
