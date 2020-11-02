@@ -1,4 +1,23 @@
 
+
+
+### Shell
+export PS1='[ \u@\h:\w | \A $( gitbranch ) ]\n\$ '
+if which vim >/dev/null 2&>1
+then
+    alias vi='vim'
+fi
+
+### Git functions
+
+gitbranch ()
+{
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>&1 ) && echo "| ⎇ $BRANCH" || true
+}
+
+
+git config --global --add color.ui true
+
 ### Git aliases
 alias    git='git --no-pager'
 alias    .gs='git status'
