@@ -23,7 +23,7 @@ gitbranch () {
         && echo "$BRANCH"  || true
 }
 
-[ -n "$( gitbranch )" ] && bailout 'Current dir is already a Git. Exiting.'
+CURBR=$( gitbranch )
 
 DEV1=${DEV1:-Anna}; EMAIL1='anna@acme.com'
 DEV2=${DEV2:-Jack}; EMAIL2='jack@example.com'
@@ -34,8 +34,69 @@ GITLOG='git --no-pager log --graph --decorate --oneline --all'
 
 D=$( pwd )
 
-SCEN1DESC="
-  Scen 1: 2x Individual repo's
+
+SCEN11DESC="
+  Scen 11: Prep fast-forward merge
+
+    ======= Prep:
+    Step 1. create and checkout new branch **scen11**: git checkout -b scen11
+    Step 2. create 3 new commits in **scen11**       : gitgencommits 3
+    Step 3. checkout $CURBR                          : git checkout $CURBR
+
+    ======= Execute:
+    Step 4. fast-forward merge branch 'scen11' into $CURBR: git merge scen11
+
+"
+
+SCEN12DESC="
+  Scen 12: Prep 3-way merge - without merge-conflict
+
+    ======= Prep:
+    Step 1. create new branch: 'git branch scen12'
+    Step 2. 
+    Step 3. 
+
+    ======= Execute:
+    Step 3. Execute 'git merge scen12'
+
+"
+
+SCEN13DESC="
+  Scen 13: Prep 3-way merge with MERGE-CONFLICT
+
+    ======= Prep:
+    Step 1. create new file: MERGE_CONFLICT
+    Step 2. create new branch: 'git branch scen13'
+    Step 3. Still in master: modify line2 of MERGE_CONFLICT
+    Step 4. check-out branch scen13
+    Step 5. in scen13: create conflicting content in line2 of MERGE_CONFLICT
+    Step 6. check-out branch master
+
+    ======= Execute:
+    Step 3. Execute 'git merge scen13' to observer merge conflict
+
+"
+
+SCEN14DESC="
+  Scen 14: Prep 3-way merge with edits to same file, yet WITHOUT merge-conflict
+
+    ======= Prep:
+    Step 1. create new file: MERGE_CONFLICT
+    Step 2. create new branch: 'git branch scen13'
+    Step 3. Still in master: modify line2 of MERGE_CONFLICT
+    Step 4. check-out branch scen13
+    Step 5. in scen13: create conflicting content in line2 of MERGE_CONFLICT
+    Step 6. check-out branch master
+
+    ======= Execute:
+    Step 3. Execute 'git merge scen13' to observer merge conflict
+
+"
+
+SCEN21DESC="
+  Scen 21: Peer-to-peer collaboration: 2x individual repo's
+
+    ======= Prep:
     Step 1. repo $DEV1 is created, with a single commit (README.DEV1)
     Step 2. local configuraion: username: $DEV1, email: $EMAIL1
     Step 3. repo $DEV2 is created, $DEV1's repo added as remote,
@@ -45,8 +106,10 @@ SCEN1DESC="
     Step 4. $DEV2's repo is added as remote to $DEV2's repo
 "
 
-SCEN2DESC="
-  Scen 2: Central rep with 2 DEVs
+SCEN22DESC="
+  Scen 22: Collaboration with a Central repository: 2x DEVs
+
+    ======= Prep:
     Step 1. bare repo $CENTRAL is created
     Step 2. repo $DEV1 is created, with a local config:
             username: $DEV1, email: $EMAIL1
@@ -60,8 +123,133 @@ SCEN2DESC="
 
 "
 
+SCEN33DESC="
+  Scen 33: Prep a rebase with a 3-way merge that has merge-conflict
+           (based on scen13)
+
+    ======= Prep:
+    Step 1. Run scen13
+    Step 2. Rename branch scen13 to scen33: 'git branch rename scen13 scen33'
+    Step 3. Still in master: modify line2 of MERGE_CONFLICT
+    Step 4. check-out branch scen13
+    Step 5. in scen13: create conflicting content in line2 of MERGE_CONFLICT
+    Step 6. check-out branch master
+
+    ======= Execute:
+    Step 3. Execute 'git rebase scen13' to observer merge conflict
+
+"
 case $ACTION in
-1)
+11)
+    cat <<EOF
+$SCEN11DESC
+EOF
+    gitgencommits 2
+    CURBR=$( gitbranch )
+    git checkout -b scen11
+    gitgencommits 3
+    git checkout $CURBR
+    $GITLOG
+    echo '-----------------------------------------------------------'
+    echo 'Execute: git merge scen11'
+    echo 'Observe fast-forward merge'
+    echo '-----------------------------------------------------------'
+    echo
+    ;;
+12)
+    cat <<EOF
+$SCEN12DESC
+EOF
+    if [ -z "$( $GITLOG )" ]
+    then gitgencommits 1
+    fi
+    CURBR=$( gitbranch )
+    git branch scen12
+    gitgencommits 2
+    git checkout scen12
+    gitgencommits 3
+    git checkout $CURBR
+    $GITLOG
+    echo '-----------------------------------------------------------'
+    echo 'Execute: git merge scen12'
+    echo 'Observe 3-way merge'
+    echo '-----------------------------------------------------------'
+    echo
+    ;;
+13)
+    cat <<EOF
+$SCEN13DESC
+EOF
+    if [ -z "$( $GITLOG )" ]
+    then gitgencommits 1
+    fi
+    CURBR=$( gitbranch )
+    echo '----- Creating file: MERGE_CONFLICT'
+    printf 'Line1\nLine2\nLine3\nLine 4\n' > MERGE_CONFLICT
+    git add MERGE_CONFLICT
+    git commit -m 'Added MERGE_CONFLICT with original content'
+    git branch scen13
+    # gitgencommits 2
+    git checkout scen13
+    # gitgencommits 2
+    echo "----- Creating conflicting content in scen13"
+    sed -i '2s/^.*$/Line 2 -- now with some conflicting content in scen13/g' MERGE_CONFLICT
+    git add MERGE_CONFLICT
+    git commit -m 'Modified MERGE_CONFLICT with conflicting content in scen13'
+    gitgencommits 1
+    git checkout $CURBR
+    echo "----- Creating conflicting content in $CURBR"
+    sed -i "2s/^.*$/Line 2 -- now with some conflicting content in $CURBR/g" MERGE_CONFLICT
+    git add MERGE_CONFLICT
+    git commit -m "Modified MERGE_CONFLICT with conflicting content in $CURBR"
+    $GITLOG
+    echo '-----------------------------------------------------------'
+    echo 'Execute: git merge scen13'
+    echo '-----------------------------------------------------------'
+    echo 'Observe that:'
+    echo '- There is a merge-conflict in file MERGE_CONFLICT'
+    echo '- git marked the conflicts with special markers:'
+    echo '  "<<<<<<<<", "========" and ">>>>>>>>"'
+    echo '-----------------------------------------------------------'
+    echo
+    ;;
+14)
+    cat <<EOF
+$SCEN13DESC
+EOF
+    if [ -z "$( $GITLOG )" ]
+    then gitgencommits 1
+    fi
+    CURBR=$( gitbranch )
+    echo '----- Creating file: MERGE_CONFLICT'
+    printf 'Line1\nLine2\nLine3\nLine 4\n' > MERGE_CONFLICT
+    git add MERGE_CONFLICT
+    git commit -m 'Added MERGE_CONFLICT with original content'
+    git branch scen14
+    gitgencommits 2
+    git checkout scen14
+    gitgencommits 2
+    echo "----- Creating conflicting content in scen14"
+    sed -i "1s/^.*$/Line 1 -- now with different, yet not conflicting content in branch: scen14/g" MERGE_CONFLICT
+    git add MERGE_CONFLICT
+    git commit -m 'Modified MERGE_CONFLICT without merge conflict in scen14'
+    gitgencommits 1
+    git checkout $CURBR
+    echo "----- Creating conflicting content in $CURBR"
+    sed -i "4s/^.*$/Line 4 -- now with different, yet not conflicting content in $CURBR/g" MERGE_CONFLICT
+    git add MERGE_CONFLICT
+    git commit -m "Modified MERGE_CONFLICT without merge conflict in $CURBR"
+    $GITLOG
+    echo '-----------------------------------------------------------'
+    echo 'Execute: git merge scen14'
+    echo '-----------------------------------------------------------'
+    echo 'Observe that:'
+    echo '- There is no merge conflict'
+    echo '-----------------------------------------------------------'
+    echo
+    ;;
+21)
+    [ -n "$CURBR" ] && bailout 'Current dir is already a Git. Exiting.'
     echo; echo "### --- Creating $DEV1's personal repo (dir: $(pwd)"
     cd "$D"
     git init $DEV1
@@ -111,7 +299,8 @@ case $ACTION in
         ) | sed -e 's/^/    /g'
     printf '\n---   ---   ---   ---   ---   ---   ---   ---  \n'
     ;;
-2)
+22)
+    [ -n "$CURBR" ] && bailout 'Current dir is already a Git. Exiting.'
     echo; echo "### --- Creating central repository (dir: $(pwd)"
     git init --bare "$CENTRAL"
 
@@ -150,11 +339,56 @@ case $ACTION in
     echo "DEV2: $DEV2, in $(realpath $DEV2) "
     echo "Central repo: $CENTRAL in $(realpath $CENTRAL)"
     ;;
+33)
+    if [ -z "$( $GITLOG )" ]
+    then gitgencommits 1
+    fi
+    CURBR=$( gitbranch )
+    echo '----- Rebasing demo (based on scen13)'
+    $0 13
+    echo '      Rename branch scen13 to scen33'
+    git branch -m scen13 scen33
+    $GITLOG
+    echo '-----------------------------------------------------------'
+    echo 'Execute: git rebase scen33'
+    echo '-----------------------------------------------------------'
+    echo 'Observe that:'
+    echo '- Git will indicate a merge-conflict in file MERGE_CONFLICT'
+    echo '- After manually resolving the conflict'
+    echo '  - execute: git add MERGE_CONFLICT'
+    echo '  - execute: git rebase --continue'
+    echo '- Branch **scen34** is now "in-line" with **master**,'
+    echo '  i.e.: fast-forward merge possible,'
+    echo '-----------------------------------------------------------'
+    echo
+    ;;
+34)
+    if [ -z "$( $GITLOG )" ]
+    then gitgencommits 1
+    fi
+    CURBR=$( gitbranch )
+    echo '----- Rebasing demo (based on scen14)'
+    $0 14
+    echo '      Rename branch scen14 to scen34'
+    git branch -m scen14 scen34
+    $GITLOG
+    echo '-----------------------------------------------------------'
+    echo 'Execute: git rebase scen34'
+    echo '-----------------------------------------------------------'
+    echo 'Observe that:'
+    echo '- There is no merge conflict'
+    echo '- Branch **scen34** is now "in-line" with **master**,'
+    echo '  i.e.: fast-forward merge possible,'
+    echo '-----------------------------------------------------------'
+    echo
+    ;;
+-d|--describe)
+    DESC="SCEN${1}DESC"
+    printf '%s' "${!DESC}"
+    ;;
 *)
     echo "Usage:"
-    echo "     $( basename $0 ) 1 | 2"
+    echo "     $( basename $0 ) [ -d | --describe ] 11 | 12 | 13 | 21 | 22"
     echo "  Where:"
-    printf '%s' "$SCEN1DESC"
-    printf '%s' "$SCEN2DESC"
     ;;
 esac
