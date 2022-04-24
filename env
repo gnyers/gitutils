@@ -2,8 +2,8 @@
 
 
 ### Shell
-export PS1='[ \u@\h:\w | \A $( gitbranch ) ]\n\$ '
-if which vim >/dev/null 2&>1
+export PS1='[ \u@\h:\w | \A | $EDITOR | $( gitbranch )]\n\$ '
+if which vim >/dev/null 2>&1
 then
     alias vi='vim'
 fi
@@ -12,9 +12,8 @@ fi
 
 gitbranch ()
 {
-    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>&1 ) && echo "| ⎇ $BRANCH" || true
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>&1 ) && echo "⎇ $BRANCH" || true
 }
-
 
 git config --global --add color.ui true
 
@@ -34,3 +33,5 @@ alias   .gco='git checkout'
 alias .gpush='git push'
 alias .gpull='git pull'
 
+### Add scipts to $PATH
+export PATH=$PATH:$(pwd)
