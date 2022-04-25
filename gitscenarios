@@ -57,7 +57,7 @@ SCEN12DESC="
     Step 3. 
 
     ======= Execute:
-    Step 3. Execute 'git merge scen12'
+    Step 4. Execute 'git merge scen12'
 
 "
 
@@ -73,7 +73,7 @@ SCEN13DESC="
     Step 6. check-out branch master
 
     ======= Execute:
-    Step 3. Execute 'git merge scen13' to observer merge conflict
+    Step 7. Execute 'git merge scen13' to observe the merge conflict
 
 "
 
@@ -82,14 +82,14 @@ SCEN14DESC="
 
     ======= Prep:
     Step 1. create new file: MERGE_CONFLICT
-    Step 2. create new branch: 'git branch scen13'
+    Step 2. create new branch: 'git branch scen14'
     Step 3. Still in master: modify line2 of MERGE_CONFLICT
-    Step 4. check-out branch scen13
-    Step 5. in scen13: create conflicting content in line2 of MERGE_CONFLICT
+    Step 4. check-out branch scen14
+    Step 5. in scen14: edit the file in such a way that it will NOT cause merge-conflict
     Step 6. check-out branch master
 
     ======= Execute:
-    Step 3. Execute 'git merge scen13' to observer merge conflict
+    Step 7. Execute 'git merge scen14' to observe that there are no merge conflicts
 
 "
 
