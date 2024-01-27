@@ -39,41 +39,57 @@ SCEN11DESC="
   Scen 11: Prep fast-forward merge
 
     ======= Prep:
-    Step 1. create and checkout new branch **scen11**: git checkout -b scen11
-    Step 2. create 3 new commits in **scen11**       : gitgencommits 3
-    Step 3. checkout $CURBR                          : git checkout $CURBR
+    Step 1. Create and checkout new branch **scen11**: git checkout -b scen11
+    Step 2. Create 3 new commits in **scen11**       : gitgencommits 3
+    Step 3. Checkout $CURBR                          : git checkout $CURBR
 
     ======= Execute:
-    Step 4. fast-forward merge branch 'scen11' into $CURBR: git merge scen11
+    Step 4. Fast-forward merge branch 'scen11' into $CURBR: git merge scen11
 
 "
 
 SCEN12DESC="
-  Scen 12: Prep 3-way merge - without merge-conflict
+  Scen 12: Prep 3-way merge - WITHOUT merge-conflict
 
     ======= Prep:
-    Step 1. create new branch: 'git branch scen12'
-    Step 2. 
-    Step 3. 
+    Step 0. If no commit yet, create a single commit in master
+    Step 1. Create new branch: 'git branch scen12'   : git branch scen12
+    Step 2. Create 2 new commits in **master**       : gitgencommits 2
+    Step 3. Checkout branch **scen12**               : git checkout scen12
+    Step 4. Create 3 new commits in **scen12**       : gitgencommits 3
+    STEP 5  Checkout **$CURBR**                      : git checkout $CURBR
 
     ======= Execute:
-    Step 4. Execute 'git merge scen12'
+    Step 6. 3-way merge branch 'scen12' into $CURBR: git merge scen12
 
 "
 
 SCEN13DESC="
-  Scen 13: Prep 3-way merge with MERGE-CONFLICT
+  Scen 13: Prep 3-way merge WITH merge-conflict
 
     ======= Prep:
-    Step 1. create new file: MERGE_CONFLICT
-    Step 2. create new branch: 'git branch scen13'
-    Step 3. Still in master: modify line2 of MERGE_CONFLICT
-    Step 4. check-out branch scen13
-    Step 5. in scen13: create conflicting content in line2 of MERGE_CONFLICT
-    Step 6. check-out branch master
+    Step 0. If no commit yet, create a single commit in master
+    Step 1.1 Create new file with some content, e.g. : 
+               printf 'Line1\nLine2\nLine3\nLine 4\n' > README
+    Step 1.2 Stage the file README for commit        : git add README
+    Step 2. Create new branch: 'git branch scen13'   : git branch scen13
+    Step 3. Create 2 new commits in **master**       : gitgencommits 2
+    Step 4.1 While still in **$CURBR**, modify Line 2 of README, e.g. append 
+               '.. modified content AFTER creating branch **scen13**'
+    Step 4.2 Commit modified README to **$CURBR**    : git commit -am 'MSG..' README
+
+
+    Step 4. Checkout branch **scen13**               : git checkout scen13
+    Step 5.1 Modify Line 2 of the file README, e.g. append 
+               ' .. added conflicting content in branch scen13'
+    Step 5.2 Commit modified README to **scen13**    : git commit -am 'MSG..' README
+    Step 6. Create 2 new commits in **scen13**       : gitgencommits 2
+
+    STEP 7. Checkout **$CURBR**                      : git checkout $CURBR
 
     ======= Execute:
-    Step 7. Execute 'git merge scen13' to observe the merge conflict
+    Step 8. 3-way merge branch 'scen12' into $CURBR: git merge scen12
+            Observe MERGE CONFLICT in file README
 
 "
 
@@ -161,18 +177,18 @@ EOF
 $SCEN12DESC
 EOF
     if [ -z "$( $GITLOG )" ]
-    then gitgencommits 1
+    then gitgencommits 1                     # Step 0
     fi
     CURBR=$( gitbranch )
-    git branch scen12
-    gitgencommits 2
-    git checkout scen12
-    gitgencommits 3
+    git branch scen12                        # Step 1
+    gitgencommits 2                          # Step 2
+    git checkout scen12                      # Step 3
+    gitgencommits 3                          # Step 4
     git checkout $CURBR
     $GITLOG
     echo '-----------------------------------------------------------'
     echo 'Execute: git merge scen12'
-    echo 'Observe 3-way merge'
+    echo 'Observe: 3-way merge WITHOUT merge-conflict'
     echo '-----------------------------------------------------------'
     echo
     ;;
@@ -184,38 +200,33 @@ EOF
     then gitgencommits 1
     fi
     CURBR=$( gitbranch )
-    echo '----- Creating file: MERGE_CONFLICT'
-    printf 'Line1\nLine2\nLine3\nLine 4\n' > MERGE_CONFLICT
-    git add MERGE_CONFLICT
-    git commit -m 'Added MERGE_CONFLICT with original content'
+    echo '----- Creating file: README'
+    printf 'Line 1\nLine 2\nLine 3\nLine 4\n' > README
+    git add README
+    git commit -m 'Added README with original content'
     git branch scen13
-    # gitgencommits 2
+    gitgencommits 2
+    sed -i '2s/^.*$/Line 2 .. modified content AFTER creating branch **scen13**/g' README
+    git commit -am 'Modified README AFTER creating branch **scen13**'
     git checkout scen13
-    # gitgencommits 2
     echo "----- Creating conflicting content in scen13"
-    sed -i '2s/^.*$/Line 2 -- now with some conflicting content in scen13/g' MERGE_CONFLICT
-    git add MERGE_CONFLICT
-    git commit -m 'Modified MERGE_CONFLICT with conflicting content in scen13'
-    gitgencommits 1
+    sed -i '2s/^.*$/Line 2 .. added conflicting content in branch scen13/g' README
+    git add README
+    git commit -m 'Modified README with conflicting content in scen13'
+    gitgencommits 2
     git checkout $CURBR
-    echo "----- Creating conflicting content in $CURBR"
-    sed -i "2s/^.*$/Line 2 -- now with some conflicting content in $CURBR/g" MERGE_CONFLICT
-    git add MERGE_CONFLICT
-    git commit -m "Modified MERGE_CONFLICT with conflicting content in $CURBR"
     $GITLOG
     echo '-----------------------------------------------------------'
     echo 'Execute: git merge scen13'
     echo '-----------------------------------------------------------'
     echo 'Observe that:'
-    echo '- There is a merge-conflict in file MERGE_CONFLICT'
+    echo '- There is a merge-conflict in file README'
     echo '- git marked the conflicts with special markers:'
     echo '  "<<<<<<<<", "========" and ">>>>>>>>"'
     echo '-----------------------------------------------------------'
     echo
     ;;
-14)
-    cat <<EOF
-$SCEN13DESC
+14) cat <<EOF $SCEN13DESC
 EOF
     if [ -z "$( $GITLOG )" ]
     then gitgencommits 1
