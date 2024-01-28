@@ -119,7 +119,7 @@ SCEN21DESC="
     Step 4. local configuraion: username: $DEV2, email: $EMAIL2
     Step 5. $DEV1's repo added as remote, and its content is fetched and
             merged.
-    Step 4. $DEV2's repo is added as remote to $DEV2's repo
+    Step 6. $DEV2's repo is added as remote to $DEV2's repo
 "
 
 SCEN22DESC="
@@ -133,26 +133,27 @@ SCEN22DESC="
     Step 4. Add $CENTRAL as remote and push 'master' to $CENTRAL
     Step 5. repo $DEV2 is created, with a local config:
             username: $DEV2, email: $EMAIL2
-    Step 4. Add $CENTRAL as remote and pull content
-    Step 5. Checkout 'master' and create new file README.$DEV2 and commit
-    Step 6. Push changes to master
+    Step 6. Add $CENTRAL as remote and pull content
+    Step 7. Checkout 'master' and create new file README.$DEV2 and commit
+    Step 8. Push changes to master
 
 "
 
-SCEN33DESC="
-  Scen 33: Prep a rebase with a 3-way merge that has merge-conflict
+SCEN31DESC="
+  Scen 31: Prep a rebase with a 3-way merge that has merge-conflict
            (based on scen13)
 
     ======= Prep:
     Step 1. Run scen13
-    Step 2. Rename branch scen13 to scen33: 'git branch rename scen13 scen33'
-    Step 3. Still in master: modify line2 of MERGE_CONFLICT
-    Step 4. check-out branch scen13
-    Step 5. in scen13: create conflicting content in line2 of MERGE_CONFLICT
-    Step 6. check-out branch master
+    Step 2. Rename branch scen13 to **scen31**   : 'git branch rename scen13 scen31'
+    Step 3. Checkout branch **scen31**           : 'git checkout scen31'
 
     ======= Execute:
-    Step 3. Execute 'git rebase scen13' to observer merge conflict
+    Step 3. Execute 'git rebase master' 
+            - solve the merge conflict
+            - observe that branch **scen31** is now in-line with **master**
+    Step 4. Check out **master**
+    Step 5. 'Fast-forward' merge branch **scen31** in **master**
 
 "
 case $ACTION in
@@ -350,46 +351,26 @@ EOF
     echo "DEV2: $DEV2, in $(realpath $DEV2) "
     echo "Central repo: $CENTRAL in $(realpath $CENTRAL)"
     ;;
-33)
-    if [ -z "$( $GITLOG )" ]
-    then gitgencommits 1
-    fi
-    CURBR=$( gitbranch )
+31)
     echo '----- Rebasing demo (based on scen13)'
     $0 13
-    echo '      Rename branch scen13 to scen33'
-    git branch -m scen13 scen33
+    echo '      Rename branch scen13 to scen31'
+    git branch -m scen13 scen31
+    echo '      Checkout branch **scen31**'
+    git checkout scen31
     $GITLOG
     echo '-----------------------------------------------------------'
-    echo 'Execute: git rebase scen33'
+    echo 'Execute: git checkout scen31 && git rebase master'
     echo '-----------------------------------------------------------'
     echo 'Observe that:'
-    echo '- Git will indicate a merge-conflict in file MERGE_CONFLICT'
+    echo '- Git will indicate a merge-conflict in file README'
     echo '- After manually resolving the conflict'
-    echo '  - execute: git add MERGE_CONFLICT'
+    echo '  - execute: git add README'
     echo '  - execute: git rebase --continue'
-    echo '- Branch **scen34** is now "in-line" with **master**,'
-    echo '  i.e.: fast-forward merge possible,'
-    echo '-----------------------------------------------------------'
-    echo
-    ;;
-34)
-    if [ -z "$( $GITLOG )" ]
-    then gitgencommits 1
-    fi
-    CURBR=$( gitbranch )
-    echo '----- Rebasing demo (based on scen14)'
-    $0 14
-    echo '      Rename branch scen14 to scen34'
-    git branch -m scen14 scen34
-    $GITLOG
-    echo '-----------------------------------------------------------'
-    echo 'Execute: git rebase scen34'
-    echo '-----------------------------------------------------------'
-    echo 'Observe that:'
-    echo '- There is no merge conflict'
-    echo '- Branch **scen34** is now "in-line" with **master**,'
-    echo '  i.e.: fast-forward merge possible,'
+    echo '- Branch **scen31** is now "in-line" with **master**,'
+    echo '  → fast-forward merge possible'
+    echo 
+    echo 'Execute fast-forward merge: git checkout master && git merge scen31'
     echo '-----------------------------------------------------------'
     echo
     ;;
@@ -399,7 +380,7 @@ EOF
     ;;
 *)
     echo "Usage:"
-    echo "     $( basename $0 ) [ -d | --describe ] 11 | 12 | 13 | 21 | 22"
+    echo "     $( basename $0 ) [ -d | --describe ] 11 | 12 | 13 | 21 | 22 | 31"
     echo "  Where:"
     ;;
 esac
