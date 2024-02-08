@@ -1,23 +1,41 @@
+#!/bin/bash
 
+case $0 in
+/bin/bash)
+   true;;
+*)
+   echo "The settings in this file require the bash shell..."
+   echo "Current shell is $0. Exiting..."
+   exit 0
+   ;;
+esac
 
-
-### Shell
-export PS1='[ \u@\h:\w | \A | $EDITOR | $( gitbranch )]\n\$ '
-if which vim >/dev/null 2>&1
-then
-    alias vi='vim'
-fi
-
-### Git functions
-
+### Shell functions for Git
 gitbranch ()
 {
     BRANCH=$(git rev-parse --abbrev-ref HEAD 2>&1 ) && echo "⎇ $BRANCH" || true
 }
 
+giteditor ()
+{
+    GITEDITOR=$( git config --list  | grep editor| tail -1 )
+    GITEDITOR=${GITEDITOR##*=}
+    [ -z "$GITEDITOR" ] && [ -n "$EDITOR"  ] &&  GITEDITOR=$EDITOR
+    [ -z "$GITEDITOR" ] && GITEDITOR=vi
+    export GITEDITOR
+    echo $GITEDITOR
+}
+
 git config --global --add color.ui true
 
-### Git aliases
+### Shell settings for Git
+export PS1='[\u@\h:\w | \A | $( giteditor ) | $( gitbranch )]\n\$ '
+if which vim >/dev/null 2>&1
+then
+    alias vi='vim'
+fi
+
+### Shell aliases for Git
 alias    git='git --no-pager'
 alias    .gs='git status'
 
