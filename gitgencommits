@@ -22,6 +22,20 @@ gitbranch () {
         && echo "$BRANCH"  || true
 }
 
+if [ $# -lt 1 ] 
+then
+   cat <<EOF
+Usage: $( basename $0 ) NUMBER [ BRANCH ]
+
+Where:
+
+- NUMBER: how many new commits to generate
+- BRANCH: in which branch to generate commits (default: current branch)
+
+EOF
+   exit 1
+fi
+
 [ -n "$2" ] && BRANCH=$2 || BRANCH=$( gitbranch )
 [ -z "$BRANCH" ] && BRANCH=master
 
