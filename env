@@ -1,6 +1,6 @@
 #!/bin/bash
 
-case $0 in
+case $SHELL in
 /bin/bash)
    true;;
 *)
@@ -52,4 +52,4 @@ alias .gpush='git push'
 alias .gpull='git pull'
 
 ### Add scipts to $PATH
-export PATH=$PATH:$(pwd)
+export PATH=$PATH:$(dirname $( realpath ${BASH_SOURCE[0]} ))
