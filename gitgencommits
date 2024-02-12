@@ -22,6 +22,9 @@ gitbranch () {
         && echo "$BRANCH"  || true
 }
 
+[ -d $( pwd )/.git ] || { echo 'Current directory is not a Git repo. Exiting!';
+                          exit 1; }
+
 if [ $# -lt 1 ] 
 then
    cat <<EOF
@@ -37,6 +40,8 @@ EOF
 fi
 
 [ -n "$2" ] && BRANCH=$2 || BRANCH=$( gitbranch )
+[ -z "$BRANCH" ] && BRANCH=$( basename $( cut -d: -f 2 .git/HEAD ) )
+[ -z "$BRANCH" ] && BRANCH=$( git config init.defaultBranch )
 [ -z "$BRANCH" ] && BRANCH=master
 
 
